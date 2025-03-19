@@ -5,12 +5,13 @@ import './App.css'
 
 import React, { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithPopup,signInWithEmailAndPassword, GoogleAuthProvider, signOut, User } from "firebase/auth";
+import { getAuth, signInWithPopup,signInWithEmailAndPassword, GoogleAuthProvider, signOut, User , createUserWithEmailAndPassword} from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-import { Button, Card, CardContent, Typography } from "@mui/material";
+import { Button, Card, CardContent, Typography, TextField } from "@mui/material";
 //import "tailwindcss/tailwind.css";
 //import tailwindcss from '@tailwindcss/vite'
 
+/*
 function App_old() {
   const [count, setCount] = useState(0)
 
@@ -39,6 +40,7 @@ function App_old() {
     </>
   )
 }
+  */
 
 /*
 const firebaseConfig = {
@@ -64,14 +66,28 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 //const provider = new GoogleAuthProvider();
+const provider = new GoogleAuthProvider();
 
 const App: React.FC = () => {
+  //const [user, setUser] = useState<User | null>(null);
+
   const [user, setUser] = useState<User | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(setUser);
     return () => unsubscribe();
   }, []);
+
+/*
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+  };
+  */
+
 
   const handleLogin = async () => {
     try {
@@ -80,7 +96,8 @@ const App: React.FC = () => {
       const result = await signInWithPopup(auth, provider);
       */
 
-       await signInWithEmailAndPassword(auth, "ronnicorrea@hotmail.com", "!#@06129192Fb")
+       //await signInWithEmailAndPassword(auth, "ronnicorrea@hotmail.com", "!#@06129192Fb")
+       await signInWithEmailAndPassword(auth, "ronnicnovello@gmail.com", "06129192")
       .then(async (userCredential) => {
         
         console.log("Usuário autenticado:", userCredential.user);
@@ -108,11 +125,74 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      setUser(result.user);
+    } catch (error) {
+      console.error("Erro ao autenticar com Google:", error);
+    }
+  };
+
+  const handleEmailAuth = async () => {
+    try {
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (error) {
+      console.error("Erro ao autenticar com e-mail:", error);
+    }
+  };
+
+  /*
+  const handleLogout = async () => {
+    await signOut(auth);
+    setUser(null);
+  };
+  */
+
+
   const handleLogout = async () => {
     await signOut(auth);
     setUser(null);
   };
 
+  const criarOuAtualizarUsuario = async () => {
+    try {
+      await setDoc(doc(db, "users", "123"), {
+        nome: "João Silva",
+        email: "joao@email.com",
+        idade: 30,
+      });
+      console.log("Usuário salvo com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar usuário:", error);
+    }
+  };
+  
+  //criarOuAtualizarUsuario();
+
+  const obterUsuario = async () => {
+    try {
+      const docRef = doc(db, "users", "123");
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        console.log("Dados do usuário:", docSnap.data());
+      } else {
+        console.log("Usuário não encontrado!");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar usuário:", error);
+    }
+  };
+  
+  //obterUsuario();
+
+
+  /*
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-96 p-6 shadow-lg">
@@ -122,7 +202,7 @@ const App: React.FC = () => {
           </Typography>
           {user ? (
             <div className="text-center">
-              <Typography variant="h6">Olá, {user.displayName}!</Typography>
+              <Typography variant="h6">Olá, {user.email}!</Typography>
               <Button variant="contained" color="secondary" onClick={handleLogout} className="mt-4">
                 Logout
               </Button>
@@ -136,6 +216,58 @@ const App: React.FC = () => {
       </Card>
     </div>
   );
+  */
+
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-96 p-6 shadow-lg">
+        <CardContent>
+          <Typography variant="h5" className="mb-4">
+            Firebase Auth
+          </Typography>
+          {user ? (
+            <div className="text-center">
+              <Typography variant="h6">Olá, {user.displayName || user.email}!</Typography>
+              <Button variant="contained" color="secondary" onClick={handleLogout} className="mt-4">
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <TextField
+                label="E-mail"
+                variant="outlined"
+                fullWidth
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <TextField
+                label="Senha"
+                variant="outlined"
+                type="password"
+                fullWidth
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              
+              <Button variant="contained" color="primary" onClick={handleEmailAuth}>
+                {isRegistering ? "Registrar" : "Login"}
+              </Button>
+              <Button variant="outlined" color="primary" onClick={() => setIsRegistering(!isRegistering)}>
+                {isRegistering ? "Já tem conta? Faça login" : "Criar conta"}
+              </Button>
+              <Button variant="contained" color="secondary" onClick={handleGoogleLogin}>
+                Login com Google
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+
 };
 
 export default App
