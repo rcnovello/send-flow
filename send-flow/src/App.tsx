@@ -5,7 +5,7 @@ import './App.css'
 
 import React, { useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
+import { getAuth, signInWithPopup,signInWithEmailAndPassword, GoogleAuthProvider, signOut, User } from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { Button, Card, CardContent, Typography } from "@mui/material";
 //import "tailwindcss/tailwind.css";
@@ -63,7 +63,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+//const provider = new GoogleAuthProvider();
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -75,20 +75,34 @@ const App: React.FC = () => {
 
   const handleLogin = async () => {
     try {
+
+      /*
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      setUser(user);
+      */
+
+       await signInWithEmailAndPassword(auth, "ronnicorrea@hotmail.com", "!#@06129192Fb")
+      .then(async (userCredential) => {
+        
+        console.log("Usuário autenticado:", userCredential.user);
+        const user = userCredential.user;        
+        setUser(user);
       
-      const userDoc = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userDoc);
-      
-      if (!userSnap.exists()) {
-        await setDoc(userDoc, {
-          uid: user.uid,
-          name: user.displayName,
-          email: user.email,
-        });
-      }
+        const userDoc = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDoc);
+        
+        if (!userSnap.exists()) {
+          await setDoc(userDoc, {
+            uid: user.uid,
+            name: user.displayName,
+            email: user.email,
+          });
+        }
+
+      })
+      .catch((error) => {
+        console.error("Erro ao autenticar:", error);
+      });
+
     } catch (error) {
       console.error("Erro ao autenticar:", error);
     }
