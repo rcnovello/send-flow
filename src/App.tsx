@@ -4,9 +4,10 @@ import viteLogo from '/vite.svg'
 import './App.css'
 
 import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithPopup,signInWithEmailAndPassword, GoogleAuthProvider, signOut, User , createUserWithEmailAndPassword} from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs  } from "firebase/firestore";
 import { Button, Card, CardContent, Typography, TextField } from "@mui/material";
 //import "tailwindcss/tailwind.css";
 //import tailwindcss from '@tailwindcss/vite'
@@ -68,10 +69,12 @@ const db = getFirestore(app);
 //const provider = new GoogleAuthProvider();
 const provider = new GoogleAuthProvider();
 
-const App: React.FC = () => {
+const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) => {
+//const App: React.FC = () => {
   //const [user, setUser] = useState<User | null>(null);
 
-  const [user, setUser] = useState<User | null>(null);
+  const [user] = useState<User | null>(null);
+  //const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
@@ -266,8 +269,66 @@ const App: React.FC = () => {
       </Card>
     </div>
   );
+}
+
+  const UsersList: React.FC<{ user: User | null; onLogout: () => void }> = ({ user, onLogout }) => {
+    const [users, setUsers] = useState<any[]>([]);
+  
+    useEffect(() => {
+      const fetchUsers = async () => {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        setUsers(querySnapshot.docs.map((doc) => doc.data()));
+      };
+      fetchUsers();
+    }, []);
+  
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <Card className="w-96 p-6 shadow-lg">
+          <CardContent>
+            <Typography variant="h5" className="mb-4">
+              Lista de Usuários
+            </Typography>
+            {user && <Typography variant="h6">Olá, {user.displayName || user.email}!</Typography>}
+            <Button variant="contained" color="secondary" onClick={onLogout} className="mt-4">
+              Logout
+            </Button>
+            <div className="mt-4">
+              {users.map((usr, index) => (
+                <Typography key={index}>{usr.name || usr.email}</Typography>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+
+  };
 
 
-};
+  const App: React.FC = () => {
+    const [user, setUser] = useState<User | null>(null);
+  
+    useEffect(() => {
+      const unsubscribe = auth.onAuthStateChanged(setUser);
+      return () => unsubscribe();
+    }, []);
+  
+    const handleLogout = async () => {
+      await signOut(auth);
+      setUser(null);
+    };
+  
+    return (
+      <Router>
+        <Routes>
+          <Route path="/" element={user ? <Navigate to="/users" /> : <Login setUser={setUser} />} />
+          <Route path="/users" element={user ? <UsersList user={user} onLogout={handleLogout} /> : <Navigate to="/" />} />
+        </Routes>
+      </Router>
+    );
+  };
+  
+
 
 export default App
