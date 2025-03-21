@@ -4,11 +4,11 @@ import viteLogo from '/vite.svg'
 import './App.css'
 
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate} from "react-router-dom";
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithPopup,signInWithEmailAndPassword, GoogleAuthProvider, signOut, User , createUserWithEmailAndPassword} from "firebase/auth";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs  } from "firebase/firestore";
-import { Button, Card, CardContent, Typography, TextField } from "@mui/material";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, where, limit  } from "firebase/firestore";
+import { Button, Grid, Card, CardContent, Typography, TextField } from "@mui/material";
 //import "tailwindcss/tailwind.css";
 //import tailwindcss from '@tailwindcss/vite'
 
@@ -271,6 +271,7 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
   );
 }
 
+/*
   const UsersList: React.FC<{ user: User | null; onLogout: () => void }> = ({ user, onLogout }) => {
     const [users, setUsers] = useState<any[]>([]);
   
@@ -281,13 +282,15 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
       };
       fetchUsers();
     }, []);
+
+    
   
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
         <Card className="w-96 p-6 shadow-lg">
           <CardContent>
             <Typography variant="h5" className="mb-4">
-              Lista de Usuários
+              Minha Lista de Conexões
             </Typography>
             {user && <Typography variant="h6">Olá, {user.displayName || user.email}!</Typography>}
             <Button variant="contained" color="secondary" onClick={onLogout} className="mt-4">
@@ -304,7 +307,158 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
     );
 
   };
+  */
 
+  
+  const UsersList: React.FC<{ user: User | null; onLogout: () => void }> = ({ user, onLogout }) => {
+    //const [users, setUsers] = useState<any[]>([]);
+
+    const [users, setUsers] = useState<any[]>([]);
+
+    const [contatos, setContatos] = useState<any[]>([]);
+  
+    useEffect(() => {
+
+      
+      const fetchUsers = async () => {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        setUsers(querySnapshot.docs.map((doc) => doc.data()));
+      };
+      fetchUsers();
+      
+
+      const fetchConexoes = async () => {
+
+        try {
+          // 🔹 Criar consulta para conexões filtradas pelo usuário
+          const conexoesRef = collection(db, "conexoes");
+          //const conexoesQuery = query(conexoesRef, where("nm_conexao", "==", 'fzgMEewN1WYFtaCBYKZntfCYINm1'), limit(10));
+          const conexoesQuery = query(conexoesRef, where("nm_conexao", "==", user?.uid), limit(10));
+          
+          const conexoesSnapshot = await getDocs(conexoesQuery);
+
+          const conexoesIDs = conexoesSnapshot.docs.map((doc) => doc.id); // 🔥 Extraindo IDs corretamente
+
+
+          // 🔹 Criar consulta para contatos filtrados pelo usuário
+          const contatosRef = collection(db, "contatos");
+          const contatosQuery = query(contatosRef, where("id_contato", "in", conexoesIDs), limit(10));
+          const contatosSnapshot = await getDocs(contatosQuery);
+
+          // 🔹 Transformar os documentos em um array de objetos
+          const conexoes = conexoesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const contatos = contatosSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+          setContatos(contatos);
+
+          //console.log("Conexões do usuário:", conexoes);
+          //console.log("Contatos do usuário:", contatos);
+
+          //return { conexoes, contatos };
+        } catch (error) {
+          console.error("Erro ao buscar conexões e contatos:", error);
+        }
+      };
+
+      fetchConexoes();
+
+    }, []);
+
+    /*
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+        <Card className="w-96 p-6 shadow-lg">
+          <CardContent>
+            <Typography variant="h5" className="mb-4">
+              Minha Lista de Conexões
+            </Typography>
+            {user && <Typography variant="h6">Olá, {user.displayName || user.email}!</Typography>}
+            <Button variant="contained" color="secondary" onClick={onLogout} className="mt-4">
+              Logout
+            </Button>
+            <div className="mt-4">
+              {contatos.map((contato, index) => (
+                <Typography key={index}>{contato.nr_telefone + contato.nm_contato}</Typography>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+    */
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+        <Card className="w-full max-w-lg p-6 shadow-lg">
+          <CardContent>
+            <Typography variant="h5" className="mb-4 text-center font-bold">
+              Minha Lista de Conexões
+            </Typography>
+  
+            {user && (
+              <Typography variant="h6" className="text-center mb-4">
+                Olá, {user.displayName || user.email}!
+              </Typography>
+            )}
+  
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={onLogout}
+              className="w-full mb-4"
+            >
+              Logout
+            </Button>
+  
+            {contatos.length > 0 ? (
+              <Grid container spacing={2}>
+                {contatos.map((contato) => (
+                  <Grid
+                    item
+                    xs={12}
+                    key={contato.id}
+                    className="bg-white p-4 shadow rounded-lg flex justify-between items-center"
+                  >
+                    <div>
+                      <Typography variant="body1" className="font-semibold">
+                        {contato.nm_contato}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {contato.nr_telefone}
+                      </Typography>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => onLogout()}
+                      >
+                        Enviar Mensagem
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        size="small"
+                        onClick={() => onLogout()}
+                      >
+                        Agendar Envio
+                      </Button>
+                    </div>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Typography variant="body2" className="text-center mt-4">
+                Nenhum contato disponível.
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );  
+
+  };
 
   const App: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
