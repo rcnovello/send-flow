@@ -8,7 +8,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate} from "react-router-do
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithPopup,signInWithEmailAndPassword, GoogleAuthProvider, signOut, User , createUserWithEmailAndPassword} from "firebase/auth";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, where, limit  } from "firebase/firestore";
-import { Button, Grid, Card, CardContent, Typography, TextField } from "@mui/material";
+import { Button, Grid, Card, CardContent, Typography, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 //import "tailwindcss/tailwind.css";
 //import tailwindcss from '@tailwindcss/vite'
 
@@ -387,6 +387,15 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
     );
     */
 
+
+  //const [contatos, setContatos] = useState<{ id: string; nm_contato: string; nr_telefone: string }[]>([]);
+  const [open, setOpen] = useState(false);
+  //const [nmContato, setNmContato] = useState("");
+  //const [nrTelefone, setNrTelefone] = useState("");
+
+  // Função para abrir/fechar modal
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
         <Card className="w-full max-w-lg p-6 shadow-lg">
@@ -401,6 +410,10 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
               </Typography>
             )}
   
+          <Button variant="contained" color="primary" onClick={handleOpen} className="w-full mb-4">
+            Novo Contato
+          </Button>
+
             <Button
               variant="contained"
               color="secondary"
@@ -444,6 +457,14 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
                       >
                         Agendar Envio
                       </Button>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={onLogout}
+                        className="w-full mb-4"
+                      >
+                        Excluir Contato
+                      </Button> 
                     </div>
                   </Grid>
                 ))}
@@ -455,6 +476,33 @@ const Login: React.FC<{ setUser: (user: User | null) => void }> = ({ setUser }) 
             )}
           </CardContent>
         </Card>
+
+       {/* Modal de Cadastro */}
+       <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>Adicionar Novo Contato</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Nome do Contato"
+            variant="outlined"
+            fullWidth
+            value='{nmContato}'
+            //onChange={(e) => setNmContato(e.target.value)}
+            className="mb-4"
+          />
+          <TextField
+            label="Número de Telefone"
+            variant="outlined"
+            fullWidth
+            value={'nr'}
+            //onChange={(e) => setNrTelefone(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="secondary">Cancelar</Button>
+          <Button onClick={onLogout} color="primary">Salvar</Button>
+        </DialogActions>
+      </Dialog>
+
       </div>
     );  
 
